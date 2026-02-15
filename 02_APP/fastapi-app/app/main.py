@@ -31,7 +31,9 @@ async def classify_image(file: UploadFile = File(...)):
         return {
             "filename": file.filename,
             "prediction": prediction.get('label'),
-            "confidence": "coming_soon"  # On ajoutera le score après
+            "bin_color": prediction.get('bin_color'),
+            "advice": prediction.get('advice'),
+            "confidence": prediction.get('confidence')
         }
     except Exception as e:
         return {"error": str(e)}

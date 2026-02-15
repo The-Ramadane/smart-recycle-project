@@ -47,9 +47,11 @@ class ModelLoader:
         # Inférence
         with torch.no_grad():
             outputs = self.model(tensor)
-            _, predicted_idx = torch.max(outputs, 1)
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)
+            confidence, predicted_idx = torch.max(probabilities, 1)
             
         label = CLASS_NAMES[predicted_idx.item()]
+        confidence_score = confidence.item()
         
         # Logique métier simplifiée (Couleurs poubelles France)
         bin_colors = {
@@ -72,6 +74,7 @@ class ModelLoader:
 
         return {
             "label": label,
+            "confidence": confidence_score,
             "bin_color": bin_colors.get(label, "unknown"),
             "advice": advice.get(label, "Consultez les consignes locales.")
         }
