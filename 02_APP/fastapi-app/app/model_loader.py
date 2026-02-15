@@ -4,10 +4,12 @@ from torchvision import models, transforms
 from PIL import Image
 import torch.nn as nn
 import io
+import os
 
 # Configuration
 DEVICE = torch.device("cpu") # Inférence sur CPU pour simplifier le déploiement Docker
-MODEL_PATH = "waste_model.pth"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "waste_model.pth")
 CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
 class ModelLoader:

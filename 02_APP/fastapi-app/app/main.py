@@ -3,7 +3,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 from io import BytesIO
-from app.model_loader import model_loader
+from .model_loader import model_loader
 
 app = FastAPI(title="Smart Recycle API", version="1.0")
 
