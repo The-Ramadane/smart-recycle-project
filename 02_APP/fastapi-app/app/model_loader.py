@@ -24,8 +24,8 @@ class ModelLoader:
         print(f"✅ Modèle chargé sur {DEVICE}")
 
     def _load_model(self):
-        # Charger l'architecture ResNet18
-        model = models.resnet18(pretrained=False) # On charge sans poids pré-entraînés car on a les nôtres
+        # Charger l'architecture ResNet50
+        model = models.resnet50(pretrained=False) # On charge sans poids pré-entraînés car on a les nôtres
         num_ftrs = model.fc.in_features
         model.fc = nn.Linear(num_ftrs, len(CLASS_NAMES))
         
