@@ -5,6 +5,8 @@ from PIL import Image
 import torch.nn as nn
 import io
 import os
+import pillow_heif
+pillow_heif.register_heif_opener()
 
 # Configuration
 DEVICE = torch.device("cpu") # Inférence sur CPU pour simplifier le déploiement Docker
