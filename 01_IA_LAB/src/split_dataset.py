@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Configuration
 SOURCE_DIR = Path("../dataset-resized")  # Relatif à 01_IA_LAB
-BASE_DIR = Path("data")
+BASE_DIR = Path("../data")
 TRAIN_DIR = BASE_DIR / "train"
 VAL_DIR = BASE_DIR / "val"
 SPLIT_RATIO = 0.8  # 80% train, 20% val

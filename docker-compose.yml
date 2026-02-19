@@ -1,0 +1,42 @@
+
+version: '3.8'
+
+services:
+  # 🧠 Backend IA (FastAPI + ResNet50)
+  api:
+    build: 
+      context: ./02_APP/fastapi-app
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      # On monte le dossier app/ pour pouvoir modifier le code sans redémarrer le conteneur (Hot Reload)
+      - ./02_APP/fastapi-app/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # 🐘 Base de Données (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: smartrecycle
+      POSTGRES_PASSWORD: smartpassword
+      POSTGRES_DB: smartrecycle_db
+    ports:
+      - "5433:5432" # On expose sur 5433 pour éviter conflit avec ton Postgres local (5432)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 🌐 Frontend (Optionnel en Dev, utile pour Prod)
+  # Pour le dev, on continuera 'npm run dev' en local pour la rapidité
+  # web:
+  #   build: ./02_APP/nextjs-app
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - api
+  #     - db
+
+volumes:
+  postgres_data:
