@@ -34,7 +34,7 @@ class ModelLoader:
         
         # Logique métier (Poubelles de tri françaises typiques)
         bin_colors = {
-            'BIODEGRADABLE': 'green', # Ou marron (compost)
+            'BIODEGRADABLE': 'black', # Poubelle noire (ordures ménagères), à défaut de composteur
             'GLASS': 'green',         # Verre -> Vert
             'PAPER': 'yellow',        # Papier -> Jaune
             'CARDBOARD': 'yellow',    # Carton -> Jaune
@@ -43,7 +43,7 @@ class ModelLoader:
         }
         
         advice = {
-            'BIODEGRADABLE': 'Composteur ou poubelle des biodéchets (marron/verte).',
+            'BIODEGRADABLE': 'Poubelle noire (ordures ménagères) à défaut de composteur. Idéalement, compostez !',
             'GLASS': 'À jeter dans le conteneur à verre, sans bouchon ni couvercle.',
             'PAPER': 'Dans la poubelle jaune. Pas besoin de froisser.',
             'CARDBOARD': 'Plier les cartons avant de les mettre dans la poubelle de tri.',
