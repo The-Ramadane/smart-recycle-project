@@ -25,15 +25,13 @@ async def classify_image(file: UploadFile = File(...)):
     try:
         contents = await file.read()
         
-        # Appel à notre modèle
-        prediction = model_loader.predict(contents)
+        # Appel à notre modèle YOLO
+        predictions = model_loader.predict(contents)
         
         return {
             "filename": file.filename,
-            "prediction": prediction.get('label'),
-            "bin_color": prediction.get('bin_color'),
-            "advice": prediction.get('advice'),
-            "confidence": prediction.get('confidence')
+            "detections": predictions,  # Renvoie un tableau avec tous les objets détectés
+            "total_objects_detected": len(predictions)
         }
     except Exception as e:
         return {"error": str(e)}
