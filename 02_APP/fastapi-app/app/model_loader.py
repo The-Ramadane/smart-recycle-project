@@ -1,85 +1,78 @@
-
-import torch
-from torchvision import models, transforms
-from PIL import Image
-import torch.nn as nn
-import io
 import os
-import pillow_heif
-pillow_heif.register_heif_opener()
+import io
+import torch
+from PIL import Image
+from ultralytics import YOLO
 
 # Configuration
-DEVICE = torch.device("cpu") # Inférence sur CPU pour simplifier le déploiement Docker
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "waste_model.pth")
-CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
+MODEL_PATH = os.path.join(BASE_DIR, "best.pt")
 
 class ModelLoader:
     def __init__(self):
         self.model = self._load_model()
-        self.transform = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-        print(f"✅ Modèle chargé sur {DEVICE}")
+        print(f"✅ Modèle YOLO chargé depuis {MODEL_PATH}")
 
     def _load_model(self):
-        # Charger l'architecture ResNet50
-        model = models.resnet50(pretrained=False) # On charge sans poids pré-entraînés car on a les nôtres
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, len(CLASS_NAMES))
-        
-        # Charger nos poids entraînés
         try:
-            state_dict = torch.load(MODEL_PATH, map_location=DEVICE)
-            model.load_state_dict(state_dict)
-            model.eval() # Mode évaluation
+            # YOLO charge automatiquement l'architecture et les poids
+            model = YOLO(MODEL_PATH)
             return model
         except Exception as e:
-            print(f"❌ Erreur chargement modèle: {e}")
+            print(f"❌ Erreur chargement modèle YOLO: {e}")
             raise e
 
     def predict(self, image_bytes):
-        # Préparer l'image
+        # Préparer l'image pour YOLO
         image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        tensor = self.transform(image).unsqueeze(0).to(DEVICE)
         
-        # Inférence
-        with torch.no_grad():
-            outputs = self.model(tensor)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)
-            confidence, predicted_idx = torch.max(probabilities, 1)
-            
-        label = CLASS_NAMES[predicted_idx.item()]
-        confidence_score = confidence.item()
+        # Inférence avec YOLO
+        # imgsz=640 par défaut, conf=0.25 (on filtre ce qui est en dessous de 25% de confiance)
+        results = self.model.predict(source=image, conf=0.40, save=False)
         
-        # Logique métier simplifiée (Couleurs poubelles France)
+        detected_objects = []
+        
+        # Logique métier (Poubelles de tri françaises typiques)
         bin_colors = {
-            'glass': 'green',       # Verre -> Vert
-            'paper': 'yellow',      # Papier -> Jaune
-            'cardboard': 'yellow',  # Carton -> Jaune
-            'plastic': 'yellow',    # Plastique -> Jaune
-            'metal': 'yellow',      # Métal -> Jaune
-            'trash': 'gray'         # Déchets ménagers -> Gris/Noir
+            'BIODEGRADABLE': 'black', # Poubelle noire (ordures ménagères), à défaut de composteur
+            'GLASS': 'green',         # Verre -> Vert
+            'PAPER': 'yellow',        # Papier -> Jaune
+            'CARDBOARD': 'yellow',    # Carton -> Jaune
+            'PLASTIC': 'yellow',      # Plastique -> Jaune
+            'METAL': 'yellow'         # Métal -> Jaune
         }
         
         advice = {
-            'glass': 'À jeter dans le conteneur à verre, sans bouchon.',
-            'paper': 'Dans la poubelle jaune. Pas besoin de froisser.',
-            'cardboard': 'Plier les cartons avant de les mettre dans la poubelle jaune.',
-            'plastic': 'Bouteilles et flacons uniquement. Poubelle jaune.',
-            'metal': 'Boîtes de conserve, canettes... Poubelle jaune.',
-            'trash': 'Déchets non recyclables. Poubelle grise/noire.'
+            'BIODEGRADABLE': 'Poubelle noire (ordures ménagères) à défaut de composteur. Idéalement, compostez !',
+            'GLASS': 'À jeter dans le conteneur à verre, sans bouchon ni couvercle.',
+            'PAPER': 'Dans la poubelle jaune. Pas besoin de froisser.',
+            'CARDBOARD': 'Plier les cartons avant de les mettre dans la poubelle de tri.',
+            'PLASTIC': 'Bouteilles et flacons en plastique. Poubelle jaune.',
+            'METAL': 'Boîtes de conserve, canettes, barquettes en alu. Poubelle jaune.'
         }
 
-        return {
-            "label": label,
-            "confidence": confidence_score,
-            "bin_color": bin_colors.get(label, "unknown"),
-            "advice": advice.get(label, "Consultez les consignes locales.")
-        }
+        # Analyser les résultats (YOLO peut détecter plusieurs objets dans la même image)
+        for r in results:
+            boxes = r.boxes
+            for box in boxes:
+                # Extraire la classe et la confiance
+                class_id = int(box.cls[0].item())
+                class_name = self.model.names[class_id]
+                confidence_score = float(box.conf[0].item())
+                
+                # Extraire la boîte de délimitation (x, y, w, h format)
+                # On la renvoie en format normalisé ou en pixels. Utilisons pixels [x1, y1, x2, y2].
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                
+                detected_objects.append({
+                    "label": class_name,
+                    "confidence": round(confidence_score, 3),
+                    "box": [round(x1, 1), round(y1, 1), round(x2, 1), round(y2, 1)],
+                    "bin_color": bin_colors.get(class_name, "gray"),
+                    "advice": advice.get(class_name, "Consultez les consignes locales.")
+                })
 
-# Instance globale pour éviter de recharger à chaque requête
+        return detected_objects
+
+# Instance globale
 model_loader = ModelLoader()
