@@ -1,0 +1,59 @@
+# C13 / C18 — Pipeline CI/CD GitHub Actions
+# Se déclenche à chaque push ou pull request sur la branche main
+# Installe les dépendances, lance les tests pytest automatiquement
+
+name: 🧪 Smart Recycle — CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master", "ramadane" ]
+  pull_request:
+    branches: [ "main", "master", "ramadane" ]
+
+jobs:
+  test-fastapi:
+    name: Tests API FastAPI (Python)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./02_APP/fastapi-app
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "02_APP/fastapi-app/requirements.txt"
+
+      - name: 📦 Installation des dépendances
+        run: pip install -r requirements.txt httpx pytest
+
+      - name: 🧪 Lancement des tests pytest
+        run: pytest tests/test_api.py -v --tb=short
+
+      - name: 📊 Rapport des résultats (en cas d'échec)
+        if: failure()
+        run: echo "❌ Des tests ont échoué. Vérifiez les logs ci-dessus."
+
+  build-docker:
+    name: 🐳 Validation Build Docker
+    runs-on: ubuntu-latest
+    needs: test-fastapi
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Build de l'image Docker FastAPI
+        run: |
+          docker build \
+            -t smart-recycle-api:latest \
+            ./02_APP/fastapi-app
+        
+      - name: ✅ Vérification que l'image est construite
+        run: docker images smart-recycle-api
