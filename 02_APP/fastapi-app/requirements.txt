@@ -6,3 +6,5 @@ torchvision
 pillow
 pillow-heif
 ultralytics>=8.4.0
+pytest
+httpx

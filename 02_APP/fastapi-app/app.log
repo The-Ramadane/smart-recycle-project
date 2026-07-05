@@ -1,0 +1,15 @@
+2026-05-24 08:18:27 | INFO | 🚀 Smart Recycle API démarrée avec succès
+2026-06-19 22:40:51 | INFO | 🚀 Smart Recycle API démarrée avec succès
+2026-06-19 22:52:03 | INFO | POST /classify — Fichier reçu : 'paper755_jpg.rf.0e21c630d3e1c5e34f871e7dcb940a3c.jpg' | Type : image/jpeg
+2026-06-19 22:52:04 | INFO | ✅ Détection réussie en 779.2ms — Objets : PAPER (91%), PAPER (90%), PAPER (86%), PAPER (61%), PAPER (61%), PAPER (48%), PAPER (44%)
+2026-06-19 22:59:43 | INFO | POST /classify — Fichier reçu : 'ensemble-de-6-verres-a-boire.jpg' | Type : image/jpeg
+2026-06-19 22:59:43 | INFO | ✅ Détection réussie en 241.7ms — Objets : GLASS (97%)
+2026-06-22 10:53:50 | INFO | 🚀 Smart Recycle API démarrée avec succès
+2026-06-22 10:55:45 | INFO | POST /classify — Fichier reçu : 'ensemble-de-6-verres-a-boire.jpg' | Type : image/jpeg
+2026-06-22 10:55:45 | INFO | ✅ Détection réussie en 375.7ms — Objets : GLASS (97%)
+2026-07-05 17:26:49 | INFO | 🚀 Smart Recycle API démarrée avec succès
+2026-07-05 17:27:23 | INFO | 🚀 Smart Recycle API démarrée avec succès
+2026-07-05 17:28:50 | INFO | POST /classify — Fichier reçu : 'ensemble-de-6-verres-a-boire.jpg' | Type : image/jpeg
+2026-07-05 17:28:52 | INFO | ✅ Détection réussie en 1922.5ms — Objets : GLASS (97%)
+2026-07-05 17:31:08 | INFO | POST /classify — Fichier reçu : 'WhatsApp Image 2026-03-23 at 11.57.37 (1).jpeg' | Type : image/jpeg
+2026-07-05 17:31:09 | INFO | ✅ Détection réussie en 950.1ms — Objets : PLASTIC (92%), PLASTIC (81%), CARDBOARD (66%), CARDBOARD (65%)
