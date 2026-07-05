@@ -436,7 +436,9 @@ export default function Home() {
                         onAnswer={handleQuizAnswer}
                       />
                     </AnimatePresence>
-                  )}\n\n                  {/* ── CAS A bis : RÉSULTATS SANS QUIZ ── */}
+                  )}
+
+                  {/* ── CAS A bis : RÉSULTATS SANS QUIZ ── */}
                   {appState === "results" && uniqueDetections.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}

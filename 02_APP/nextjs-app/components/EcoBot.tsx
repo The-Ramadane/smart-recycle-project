@@ -42,7 +42,7 @@ function getBotConfig(level: number, name: string): BotConfig {
         idleMessages: [
             `Je me répare ! Encore quelques scans... ⚙️`,
             "Je sens que je redeviens normal !",
-            "Tu es un bon réparateur, ${name} !",
+            `Tu es un bon réparateur, ${name} !`,
             "Presque opérationnel... je le sens !",
         ],
     };
