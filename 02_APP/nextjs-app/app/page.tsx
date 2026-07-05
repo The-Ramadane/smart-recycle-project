@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Upload, X, Loader2, Sparkles, CheckCircle, AlertTriangle, ScanLine, Camera, Trash2, Save, Star, RotateCcw } from "lucide-react";
@@ -65,6 +65,24 @@ export default function Home() {
 
   const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Profil utilisateur pour l'Éco-Bot ──────────────────────────────────────
+  const [userProfile, setUserProfile] = useState<{ level: number, totalScans: number, botName: string } | null>(null);
+
+  useEffect(() => {
+    if (session) {
+      fetch("/api/user/profile")
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) {
+            setUserProfile(data);
+          }
+        })
+        .catch(err => console.error("Erreur chargement profil:", err));
+    } else {
+      setUserProfile(null);
+    }
+  }, [session]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -202,6 +220,15 @@ export default function Home() {
       setIsSaved(true);
       setBotEvent("save");
       setTimeout(() => setBotEvent(null), 4000);
+
+      // Actualiser le profil après une sauvegarde pour mettre à jour l'XP/niveau
+      fetch("/api/user/profile")
+        .then(res => res.json())
+        .then(data => {
+          if (!data.error) setUserProfile(data);
+        })
+        .catch(console.error);
+
     } catch (err) {
       console.error(err);
       setError("Impossible de sauvegarder le scan en base de données.");
@@ -234,9 +261,9 @@ export default function Home() {
         {session && (
           <div className="pt-2 flex flex-col items-center">
             <EcoBot
-              level={1}
-              totalScans={0}
-              initialBotName="Éco-Bot"
+              level={userProfile?.level ?? 1}
+              totalScans={userProfile?.totalScans ?? 0}
+              initialBotName={userProfile?.botName ?? "Éco-Bot"}
               event={botEvent}
               editable={false}
             />
