@@ -1,2 +1,20 @@
 /documentation
 /venv
+.env
+
+# macOS
+.DS_Store
+
+# Fichiers temporaires Office (~$...)
+~$*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+app.log
+
+# Modèles YOLO (gros fichiers binaires)
+*.pt

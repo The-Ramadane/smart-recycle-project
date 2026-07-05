@@ -50,45 +50,44 @@ def plot_metrics(csv_path, save_dir):
         print(f"⚠️ Impossible de générer les graphiques : {e}")
 
 def main():
-    print("🚀 Initialisation du modèle YOLOv10...")
+    print("🚀 Initialisation du modèle YOLO26...")
     
-    # Charger un modèle YOLOv10 pré-entraîné (Version 'Nano' pour être rapide et léger)
-    # Assurez-vous d'avoir 'ultralytics' à jour : pip install -U ultralytics
+    # Charger un modèle YOLO26 pré-entraîné (Version 'Nano' pour être rapide et léger)
+    # Assurez-vous d'avoir 'ultralytics' très à jour !
     try:
-        model = YOLO("yolov10n.pt") 
+        model = YOLO("yolo26n.pt") # Essayer de charger le tout dernier YOLO26
     except Exception as e:
-        print(f"Erreur lors du chargement de YOLOv10 (essayez de mettre à jour ultralytics): {e}")
-        # Fallback automatique sur YOLOv8 si ultralytics n'est pas encore assez à jour localement
-        print("Fallback sur YOLOv8n...")
-        model = YOLO("yolov8n.pt")
+        print(f"Erreur lors du chargement de YOLO26 : {e}")
+        print("Fallback sur YOLO11n...")
+        model = YOLO("yolo11n.pt")
 
     # Définition du chemin absolu vers le fichier data.yaml qu'on vient de créer
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_yaml_path = os.path.join(base_dir, "dataset_yolo", "data.yaml")
     
     print(f"📁 Fichier d'entraînement ciblé : {data_yaml_path}")
-    print("🔥 Début de l'entraînement sur Apple Silicon (MPS)...")
+    print("🔥 Début de l'entraînement VRAI CRASH TEST...")
 
     # Lancement de l'entraînement
     results = model.train(
         data=data_yaml_path,
-        epochs=25,          # On commence par 25 epochs pour voir les premiers résultats rapidement
+        epochs=150,         # 🔥 150 Epochs pour combattre l'underfitting
         imgsz=640,          # Taille d'image standard YOLO
-        device="mps",       # Accélération matérielle Apple (M1/M2/M3/M4)
+        device="0",         # Mettre "0" pour NVIDIA GPU (sur ton Windows) ou "mps" sur Mac
         batch=16,           # Taille du lot d'images par itération
         workers=4,          # Cœurs CPU pour charger les données
         project="smart_recycle_yolo",
-        name="yolov10_custom",
-        patience=10         # Arrête l'entraînement si plus de progression
+        name="yolo26_custom", # Nouveau nom de dossier
+        patience=20         # Arrête l'entraînement si plus de progression après 20 epochs
     )
 
     print("✅ Entraînement terminé ! Le meilleur modèle est sauvegardé dans :")
-    print("smart_recycle_yolo/yolov10_custom/weights/best.pt")
+    print("smart_recycle_yolo/yolo26_custom/weights/best.pt")
 
     # Génération du graphique final depuis les résultats de YOLO
-    csv_path = os.path.join("smart_recycle_yolo", "yolov10_custom", "results.csv")
+    csv_path = os.path.join("smart_recycle_yolo", "yolo26_custom", "results.csv")
     if os.path.exists(csv_path):
-        plot_metrics(csv_path, os.path.join("smart_recycle_yolo", "yolov10_custom"))
+        plot_metrics(csv_path, os.path.join("smart_recycle_yolo", "yolo26_custom"))
     else:
         print("⚠️ results.csv introuvable. Avez-vous annulé l'entraînement prématurément ?")
 

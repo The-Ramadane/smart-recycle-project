@@ -1,11 +1,23 @@
-
 import logging
 import time
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .model_loader import model_loader
+import os
+from dotenv import load_dotenv
+import sentry_sdk
 
-# ── Configuration des logs (C11 — Monitoring) ─────────────────────────────
+load_dotenv() # Charge les variables du fichier .env
+
+# ── Configuration Sentry (Monitoring Externe) ───────────────────────
+sentry_dsn = os.getenv("SENTRY_DSN")
+if sentry_dsn:
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        traces_sample_rate=1.0,
+    )
+
+# ── Configuration des logs (Monitoring) ─────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -51,6 +63,14 @@ async def classify_image(file: UploadFile = File(...)):
             logger.warning("Fichier vide reçu — requête rejetée")
             raise HTTPException(status_code=400, detail="Le fichier image est vide.")
 
+        # =====================================================================
+        # 🐛 INJECTION DU BUG (SIMULATION CRASH SUR FICHIER CORROMPU)
+        # =====================================================================
+        if file.filename.startswith("crash_"):
+            logger.error("Image illisible ou format non supporté détecté.")
+            raise ValueError("UnidentifiedImageError: image file could not be identified because it is corrupted or format is not supported")
+        # =====================================================================
+
         # Appel au modèle YOLO
         predictions = model_loader.predict(contents)
 
@@ -73,8 +93,12 @@ async def classify_image(file: UploadFile = File(...)):
     except Exception as e:
         elapsed = round((time.time() - start_time) * 1000, 1)
         logger.error(f"❌ Erreur lors de la classification ({elapsed}ms) — {type(e).__name__}: {e}")
+        sentry_sdk.capture_exception(e) # 🚨 Capture de l'erreur par Sentry
         raise HTTPException(status_code=500, detail=f"Erreur interne du serveur : {str(e)}")
 
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
 
 if __name__ == "__main__":
     import uvicorn

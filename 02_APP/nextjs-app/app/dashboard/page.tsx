@@ -8,6 +8,7 @@ import { Sparkles, Trophy, Home, Medal, Globe, TreePine } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EcoBot } from "@/components/EcoBot";
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -40,9 +41,17 @@ export default async function DashboardPage() {
 
     const totalScans = user.scans.length;
 
-    // 3. Récupérer le total global des scans pour calculer l'impact environnemental (CO2)
+    // 3. Classement global de l'utilisateur
+    const usersAhead = await prisma.user.count({
+        where: { points: { gt: user.points } },
+    });
+    const userRank = usersAhead + 1;
+    const totalUsers = await prisma.user.count();
+    const isInTop5 = userRank <= 5;
+
+    // 4. Récupérer le total global des scans pour calculer l'impact environnemental (CO2)
     const totalGlobalScans = await prisma.scan.count();
-    const CO2_PER_ITEM_KG = 0.150; // Moyenne: on estime à 150 grammes de CO2 évité par objet recyclé
+    const CO2_PER_ITEM_KG = 0.150;
     const co2SavedTotal = (totalGlobalScans * CO2_PER_ITEM_KG).toFixed(1);
 
     return (
@@ -60,7 +69,7 @@ export default async function DashboardPage() {
             <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-3">
 
                 {/* En-tête / Profil Utilisateur */}
-                <Card className="md:col-span-3 border-slate-200 shadow-sm bg-white/80 backdrop-blur-sm">
+                <Card className="md:col-span-2 border-slate-200 shadow-sm bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-8 flex items-center justify-between">
                         <div className="space-y-1">
                             <h1 className="text-3xl font-extrabold flex items-center gap-3">
@@ -74,6 +83,19 @@ export default async function DashboardPage() {
                         {session.user?.image && (
                             <img src={session.user.image} alt="Avatar" className="w-16 h-16 rounded-full shadow-md" />
                         )}
+                    </CardContent>
+                </Card>
+
+                {/* Éco-Bot — Compagnon de tri */}
+                <Card className="md:col-span-1 border-slate-800 shadow-xl bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
+                    <CardContent className="p-6 flex items-center justify-center min-h-[180px]">
+                        <EcoBot
+                            level={user.level}
+                            totalScans={totalScans}
+                            initialBotName={user.botName ?? "Éco-Bot"}
+                            event="welcome"
+                            editable={true}
+                        />
                     </CardContent>
                 </Card>
 
@@ -130,30 +152,58 @@ export default async function DashboardPage() {
                 <Card className="md:col-span-3 border-slate-200 shadow-sm bg-white">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex items-center gap-2">
-                            <Medal className="w-5 h-5 text-indigo-500" /> Top 5 Recycleurs (Classement Général)
+                            <Medal className="w-5 h-5 text-indigo-500" /> Top 5 Recycleurs
+                            <span className="ml-auto text-sm font-normal text-slate-400">{totalUsers} participants</span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-col gap-3 mt-4">
+                        {/* Votre classement résumé (mise en valeur) */}
+                        <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-200 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                                    <span className="text-lg font-black text-indigo-600">
+                                        {userRank === 1 ? "🥇" : userRank === 2 ? "🥈" : userRank === 3 ? "🥉" : `#${userRank}`}
+                                    </span>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-indigo-500 font-semibold uppercase tracking-wider">Votre classement global</p>
+                                    <p className="font-black text-slate-900">
+                                        {userRank <= 3 ? "🌟 Top 3 mondial !" :
+                                            userRank <= 10 ? "⭐ Top 10 !" :
+                                                userRank <= 50 ? "💪 Dans le top 50" :
+                                                    "Continue à scanner !"}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="font-black text-2xl text-indigo-700">{user.points} <span className="text-sm font-normal">XP</span></div>
+                                <div className="text-xs text-slate-400">{userRank} / {totalUsers}</div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
                             {topUsers.map((topUser, index) => (
-                                <div key={topUser.id} className={`flex items-center justify-between p-3 rounded-lg border ${topUser.id === user.id ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-100'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="font-extrabold text-lg text-slate-400 w-6 text-center">
+                                <div key={topUser.id} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${topUser.id === user.id
+                                        ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-300'
+                                        : 'bg-slate-50 border-slate-100'
+                                    }`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="font-extrabold text-lg text-slate-400 w-7 text-center">
                                             {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `#${index + 1}`}
                                         </div>
                                         {topUser.image ? (
-                                            <img src={topUser.image} alt="Avatar" className="w-10 h-10 rounded-full shadow-sm" />
+                                            <img src={topUser.image} alt="Avatar" className="w-9 h-9 rounded-full shadow-sm" />
                                         ) : (
-                                            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold">
+                                            <div className="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-sm">
                                                 {topUser.name?.charAt(0) || "?"}
                                             </div>
                                         )}
                                         <div>
-                                            <h4 className="font-bold text-slate-800 text-sm">
+                                            <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1">
                                                 {topUser.name || "Écolo Anonyme"}
-                                                {topUser.id === user.id && <span className="ml-2 text-xs text-indigo-600 font-normal">(Vous)</span>}
+                                                {topUser.id === user.id && <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">Vous</span>}
                                             </h4>
-                                            <p className="text-xs text-slate-500">Niveau {topUser.level}</p>
+                                            <p className="text-xs text-slate-400">Niveau {topUser.level}</p>
                                         </div>
                                     </div>
                                     <div className="font-black text-indigo-600">
@@ -161,6 +211,41 @@ export default async function DashboardPage() {
                                     </div>
                                 </div>
                             ))}
+
+                            {/* Si l'utilisateur n'est PAS dans le Top 5, on l'affiche séparément */}
+                            {!isInTop5 && (
+                                <>
+                                    <div className="flex items-center gap-2 py-1">
+                                        <div className="flex-1 h-px bg-slate-200" />
+                                        <span className="text-xs text-slate-400 font-mono">···</span>
+                                        <div className="flex-1 h-px bg-slate-200" />
+                                    </div>
+                                    <div className="flex items-center justify-between p-3 rounded-lg border bg-indigo-50 border-indigo-200 ring-1 ring-indigo-300">
+                                        <div className="flex items-center gap-3">
+                                            <div className="font-extrabold text-lg text-indigo-500 w-7 text-center">
+                                                #{userRank}
+                                            </div>
+                                            {session.user?.image ? (
+                                                <img src={session.user.image} alt="Avatar" className="w-9 h-9 rounded-full shadow-sm" />
+                                            ) : (
+                                                <div className="w-9 h-9 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                                                    {user.name?.charAt(0) || "?"}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 text-sm flex items-center gap-1">
+                                                    {user.name || "Vous"}
+                                                    <span className="text-[10px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-semibold">Vous</span>
+                                                </h4>
+                                                <p className="text-xs text-slate-400">Niveau {user.level}</p>
+                                            </div>
+                                        </div>
+                                        <div className="font-black text-indigo-600">
+                                            {user.points} <span className="text-xs font-normal">XP</span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

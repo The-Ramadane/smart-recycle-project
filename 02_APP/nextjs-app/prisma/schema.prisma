@@ -19,6 +19,7 @@ model User {
   level        Int       @default(1)
   streaks      Int       @default(0)
   lastScanDate DateTime?
+  botName      String?   @default("Éco-Bot")
 
   // Relations
   accounts Account[]

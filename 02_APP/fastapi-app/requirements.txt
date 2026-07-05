@@ -8,3 +8,5 @@ pillow-heif
 ultralytics>=8.4.0
 pytest
 httpx
+sentry-sdk[fastapi]
+python-dotenv

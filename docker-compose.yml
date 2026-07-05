@@ -2,7 +2,7 @@
 version: '3.8'
 
 services:
-  # 🧠 Backend IA (FastAPI + ResNet50)
+  # 🧠 Backend IA (FastAPI + YOLO11 Object Detection)
   api:
     build: 
       context: ./02_APP/fastapi-app
@@ -10,10 +10,17 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1  # Voir les logs Python en temps réel dans Docker
     volumes:
       # On monte le dossier app/ pour pouvoir modifier le code sans redémarrer le conteneur (Hot Reload)
       - ./02_APP/fastapi-app/app:/app/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # 🐘 Base de Données (PostgreSQL)
   db:
@@ -27,16 +34,25 @@ services:
       - "5433:5432" # On expose sur 5433 pour éviter conflit avec ton Postgres local (5432)
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartrecycle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # 🌐 Frontend (Optionnel en Dev, utile pour Prod)
-  # Pour le dev, on continuera 'npm run dev' en local pour la rapidité
+  # 🌐 Frontend (Next.js) - Décommenté et prêt pour la production
   # web:
   #   build: ./02_APP/nextjs-app
   #   ports:
   #     - "3000:3000"
+  #   environment:
+  #     - NEXTAUTH_URL=http://localhost:3000
+  #     - DATABASE_URL=postgresql://smartrecycle:smartpassword@db:5432/smartrecycle_db
   #   depends_on:
-  #     - api
-  #     - db
+  #     api:
+  #       condition: service_healthy
+  #     db:
+  #       condition: service_healthy
 
 volumes:
   postgres_data:

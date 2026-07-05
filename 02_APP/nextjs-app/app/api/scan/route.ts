@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { label, binColor, confidence, advice } = body;
+        const { label, binColor, confidence, advice, forcedXP } = body;
 
         // 1. Validation basique des données
         if (!label || !binColor || confidence === undefined) {
@@ -36,10 +36,20 @@ export async function POST(req: Request) {
         let newLevel = 1;
 
         if (userId) {
-            // A. Calcul des points à donner
-            const BASE_XP = 10;
-            const PRECISION_BONUS = confidence >= 0.90 ? 5 : 0; // +5 points si l'IA est très sûre
-            earnedXP = BASE_XP + PRECISION_BONUS;
+            // A. Calcul des points à donner — basé sur la qualité de la détection
+            // Si le quiz a calculé un XP spécifique (forcedXP), on l'utilise directement.
+            // Sinon, fallback sur le barème par confiance.
+            if (typeof forcedXP === "number") {
+                earnedXP = forcedXP;
+            } else if (confidence >= 0.90) {
+                earnedXP = 10;
+            } else if (confidence >= 0.75) {
+                earnedXP = 5;
+            } else if (confidence >= 0.40) {
+                earnedXP = 2;
+            } else {
+                earnedXP = 0;
+            }
 
             // B. Récupération de l'utilisateur actuel pour mettre à jour
             const user = await prisma.user.findUnique({ where: { id: userId } });
